@@ -1,7 +1,8 @@
 'use client';
-import { ReactNode } from 'react';
+import { ReactNode, ElementType } from 'react';
 import { motion, Variants } from 'motion/react';
 import React from 'react';
+import type { JSX } from 'react';
 
 export type PresetType =
   | 'fade'
@@ -100,6 +101,10 @@ const addDefaultVariants = (variants: Variants) => ({
   visible: { ...defaultItemVariants.visible, ...variants.visible },
 });
 
+function isStringTag(tag: any): tag is keyof JSX.IntrinsicElements {
+  return typeof tag === 'string';
+}
+
 function AnimatedGroup({
   children,
   className,
@@ -115,14 +120,19 @@ function AnimatedGroup({
   const containerVariants = variants?.container || selectedVariants.container;
   const itemVariants = variants?.item || selectedVariants.item;
 
-  const MotionComponent = React.useMemo(
-    () => motion.create(as as keyof JSX.IntrinsicElements),
-    [as]
-  );
-  const MotionChild = React.useMemo(
-    () => motion.create(asChild as keyof JSX.IntrinsicElements),
-    [asChild]
-  );
+  const MotionComponent = React.useMemo(() => {
+    if (isStringTag(as)) {
+      return (motion as any)[as] || motion.div;
+    }
+    return motion.create(as as ElementType);
+  }, [as]);
+
+  const MotionChild = React.useMemo(() => {
+    if (isStringTag(asChild)) {
+      return (motion as any)[asChild] || motion.div;
+    }
+    return motion.create(asChild as ElementType);
+  }, [asChild]);
 
   return (
     <MotionComponent
